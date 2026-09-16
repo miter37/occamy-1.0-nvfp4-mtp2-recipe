@@ -1,0 +1,41 @@
+{
+  "label": "mtp2",
+  "model": "occamy-1.0-nvfp4-mtp2",
+  "target_prompt_tokens": 57344,
+  "created_at": "2026-09-16T04:23:04.169692+00:00",
+  "results": [
+    {
+      "mode": "essay",
+      "local_prompt_tokens": 57344,
+      "api_prompt_tokens": 57344,
+      "completion_tokens": 4096,
+      "ttft_seconds": 15.7164,
+      "estimated_prefill_tok_s": 3648.67,
+      "decode_seconds_after_first": 79.6199,
+      "estimated_decode_tok_s": 51.43,
+      "total_seconds": 95.3365,
+      "finish_reason": "length",
+      "output_path": "results/occamy_mtp2_56k_20260916_132043/essay.txt",
+      "output_chars": 23400,
+      "spec_metrics_log": "(APIServer pid=68) INFO 09-16 04:22:14 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.41, Accepted throughput: 31.20 tokens/s, Drafted throughput: 44.19 tokens/s, Accepted: 312 tokens, Drafted: 442 tokens, Per-position acceptance rate: 0.819, 0.593, Avg Draft acceptance rate: 70.6%"
+    },
+    {
+      "mode": "code",
+      "local_prompt_tokens": 57344,
+      "api_prompt_tokens": 57344,
+      "completion_tokens": 2048,
+      "ttft_seconds": 1.5716,
+      "estimated_prefill_tok_s": 36488.18,
+      "decode_seconds_after_first": 35.2783,
+      "estimated_decode_tok_s": 58.02,
+      "total_seconds": 36.85,
+      "finish_reason": "length",
+      "output_path": "results/occamy_mtp2_56k_20260916_132043/code.txt",
+      "output_chars": 9381,
+      "spec_metrics_log": "(APIServer pid=68) INFO 09-16 04:22:54 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.85, Accepted throughput: 40.70 tokens/s, Drafted throughput: 44.00 tokens/s, Accepted: 407 tokens, Drafted: 440 tokens, Per-position acceptance rate: 0.959, 0.891, Avg Draft acceptance rate: 92.5%",
+      "python_syntax_valid": false,
+      "python_syntax_error": "invalid syntax at line 1:1",
+      "extracted_code_path": "results/occamy_mtp2_56k_20260916_132043/code_extracted.py"
+    }
+  ]
+}

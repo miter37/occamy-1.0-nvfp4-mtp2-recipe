@@ -1,0 +1,9 @@
+# Model weights - never commit (base checkpoint is ~23 GB, MTP head ~1.6 GB)
+model_save/
+*.safetensors
+
+# Upstream checkout, pinned by commit in the README instead of vendored
+spark_vllm/
+
+__pycache__/
+*.pyc

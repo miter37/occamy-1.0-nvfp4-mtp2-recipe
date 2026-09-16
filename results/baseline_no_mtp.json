@@ -1,0 +1,64 @@
+{
+ "model": "occamy-1.0-nvfp4",
+ "engine": "vllm 0.29.1rc1.dev17+gd2d649e67.d20260913",
+ "server": "self_vllm_occamy",
+ "settings": {
+  "max_model_len": 262144,
+  "tensor_parallel_size": 1,
+  "gpu_memory_utilization": 0.7,
+  "mtp_or_speculative": false,
+  "kv_cache_dtype": "fp8",
+  "attention_backend": "flashinfer",
+  "moe_backend": "marlin"
+ },
+ "method": "streaming chat completions; unique prefix per run to avoid prefix-cache reuse; 64 output tokens with ignore_eos=true",
+ "results": [
+  {
+   "context_label": "8K",
+   "prompt_tokens": 8223,
+   "ttft_s": 1.357,
+   "prefill_tok_s": 6057.58,
+   "completion_tokens": 64,
+   "generation_time_s": 1.757,
+   "generation_tok_s": 36.43
+  },
+  {
+   "context_label": "32K",
+   "prompt_tokens": 32799,
+   "ttft_s": 6.622,
+   "prefill_tok_s": 4953.08,
+   "completion_tokens": 64,
+   "generation_time_s": 1.833,
+   "generation_tok_s": 34.92
+  },
+  {
+   "context_label": "64K",
+   "prompt_tokens": 65567,
+   "ttft_s": 16.576,
+   "prefill_tok_s": 3955.48,
+   "completion_tokens": 64,
+   "generation_time_s": 2.115,
+   "generation_tok_s": 30.26
+  },
+  {
+   "context_label": "128K",
+   "prompt_tokens": 131103,
+   "ttft_s": 47.221,
+   "prefill_tok_s": 2776.38,
+   "completion_tokens": 64,
+   "generation_time_s": 2.094,
+   "generation_tok_s": 30.56
+  },
+  {
+   "context_label": "near-256K",
+   "prompt_tokens": 261031,
+   "ttft_s": 150.155,
+   "prefill_tok_s": 1738.4,
+   "completion_tokens": 64,
+   "generation_time_s": 2.432,
+   "generation_tok_s": 26.32
+  }
+ ],
+ "note": "The model card's directly validated runtime is SGLang at 2048 context. These long-context vLLM figures are measurements taken on this host (NVIDIA DGX Spark / GB10, aarch64) and are not vendor-validated results.",
+ "caveat": "Not directly comparable to the MTP2/MTP3 runs in results/: this baseline generates 64 tokens with ignore_eos and deliberately bypasses the prefix cache, while the MTP runs generate 2048-4096 tokens at temperature 0.2 with prefix caching enabled. See README section 10."
+}

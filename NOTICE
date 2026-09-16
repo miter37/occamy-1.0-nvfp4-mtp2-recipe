@@ -1,0 +1,37 @@
+occamy-1.0-nvfp4-mtp2-recipe
+Copyright 2026 the repository authors
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+This repository contains original configuration files, scripts, documentation and
+measurements. It redistributes no model weights and no third-party source code.
+
+It documents a deployment procedure involving the following third-party works, which
+must be obtained from their own sources under their own licenses:
+
+  Accio-Lab/occamy-1.0-NVFP4 (Apache-2.0)
+    https://huggingface.co/Accio-Lab/occamy-1.0-NVFP4
+    revision c1aa9ae71c9d5d7f906b1575557e273cbdedf6f1
+
+  Accio-Lab/occamy-1.0-MTP (Apache-2.0)
+    https://huggingface.co/Accio-Lab/occamy-1.0-MTP
+    revision a3bf37704b264e320a3ac8bc901a5787a5497f36
+    `assemble_head.py` and the `runtime/` hooks belong to this work and are NOT
+    reproduced here. Short excerpts appear in README.md for the purpose of
+    explaining the failure mode they cause.
+
+  eugr/spark-vllm-docker
+    https://github.com/eugr/spark-vllm-docker
+    commit 3e1578b3c898255e7c79532569fd8d194261c3fd
+
+  vLLM (Apache-2.0)
+    https://github.com/vllm-project/vllm
+    version 0.29.1rc1.dev17+gd2d649e67.d20260913
+    A short excerpt from vllm/model_executor/models/qwen3_5_mtp.py appears in
+    README.md section 4 for explanatory purposes.
+
+The generated text under results/ was produced by Occamy-1.0-NVFP4 and is retained as
+measurement evidence.
+
+Accio-Lab, Occamy, Qwen, SGLang, vLLM and NVIDIA DGX Spark are the property of their
+respective owners. This repository is not affiliated with or endorsed by any of them.

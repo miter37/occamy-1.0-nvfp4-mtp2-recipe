@@ -1,0 +1,41 @@
+{
+  "label": "mtp3",
+  "model": "occamy-1.0-nvfp4-mtp3",
+  "target_prompt_tokens": 57344,
+  "created_at": "2026-09-16T04:17:53.038812+00:00",
+  "results": [
+    {
+      "mode": "essay",
+      "local_prompt_tokens": 57344,
+      "api_prompt_tokens": 57344,
+      "completion_tokens": 4096,
+      "ttft_seconds": 15.3683,
+      "estimated_prefill_tok_s": 3731.31,
+      "decode_seconds_after_first": 83.8463,
+      "estimated_decode_tok_s": 48.84,
+      "total_seconds": 99.2148,
+      "finish_reason": "length",
+      "output_path": "results/occamy_mtp3_56k_20260916_131529/essay.txt",
+      "output_chars": 23859,
+      "spec_metrics_log": "(APIServer pid=67) INFO 09-16 04:17:03 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.63, Accepted throughput: 30.80 tokens/s, Drafted throughput: 56.70 tokens/s, Accepted: 308 tokens, Drafted: 567 tokens, Per-position acceptance rate: 0.778, 0.524, 0.328, Avg Draft acceptance rate: 54.3%"
+    },
+    {
+      "mode": "code",
+      "local_prompt_tokens": 57344,
+      "api_prompt_tokens": 57344,
+      "completion_tokens": 2048,
+      "ttft_seconds": 1.2965,
+      "estimated_prefill_tok_s": 44229.69,
+      "decode_seconds_after_first": 33.9887,
+      "estimated_decode_tok_s": 60.23,
+      "total_seconds": 35.2854,
+      "finish_reason": "length",
+      "output_path": "results/occamy_mtp3_56k_20260916_131529/code.txt",
+      "output_chars": 9425,
+      "spec_metrics_log": "(APIServer pid=67) INFO 09-16 04:17:43 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 3.19, Accepted throughput: 40.90 tokens/s, Drafted throughput: 56.09 tokens/s, Accepted: 409 tokens, Drafted: 561 tokens, Per-position acceptance rate: 0.904, 0.727, 0.556, Avg Draft acceptance rate: 72.9%",
+      "python_syntax_valid": false,
+      "python_syntax_error": "unterminated triple-quoted string literal (detected at line 270) at line 259:5",
+      "extracted_code_path": "results/occamy_mtp3_56k_20260916_131529/code_extracted.py"
+    }
+  ]
+}

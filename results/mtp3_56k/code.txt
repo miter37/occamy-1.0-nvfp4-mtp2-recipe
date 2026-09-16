@@ -1,0 +1,270 @@
+```python
+"""
+Benchmark Results Analyzer
+
+A small, self-contained tool for loading, validating, summarizing, and comparing
+JSON benchmark records.  It is designed around the principles of reproducible
+measurement: every record carries the context (hardware, software, workload
+shape, concurrency, cache state, input/output lengths, sampling parameters)
+needed for another engineer to reproduce or interpret the results.
+
+The analyzer:
+  1. Loads a list of JSON records from one or more files.
+  2. Validates that required numeric fields are present and finite.
+  3. Computes summary statistics (mean, median, std, min, max, count) per metric.
+  4. Compares two configurations (e.g., baseline vs. speculative decoding) using
+     absolute and relative differences.
+  5. Exposes a CLI via argparse.
+
+The tool does not depend on third-party packages beyond the Python standard
+library, making it easy to ship alongside the benchmarks it analyzes.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import statistics
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+
+# ---------------------------------------------------------------------------
+# Data models
+# ---------------------------------------------------------------------------
+
+@dataclass
+class BenchmarkRecord:
+    """A single benchmark observation.
+
+    Attributes:
+        config:
+            Identifier for the system configuration under test (e.g. model name,
+            hardware, software versions).
+        metrics:
+            Mapping from metric name to its numeric value.  Required numeric
+            fields are validated at construction time.
+        metadata:
+            Optional context describing workload shape, concurrency, cache
+            state, input/output lengths, sampling parameters, etc.
+    """
+
+    config: str
+    metrics: Dict[str, float]
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    # Names of fields that must be present and numeric in every record.
+    REQUIRED_NUMERIC_FIELDS: Tuple[str, ...] = (
+        "throughput",
+        "latency_ms",
+    )
+
+    def __post_init__(self) -> None:
+        """Validate that all required numeric fields are present and finite."""
+        for key in self.REQUIRED_NUMERIC_FIELDS:
+            if key not in self.metrics:
+                raise ValueError(
+                    f"Missing required numeric metric '{key}' in record for "
+                    f"config '{self.config}'"
+                )
+            value = self.metrics[key]
+            if not isinstance(value, (int, float)):
+                raise TypeError(
+                    f"Required metric '{key}' must be numeric, got {type(value).__name__}"
+                )
+            if not math.isfinite(float(value)):
+                raise ValueError(
+                    f"Required metric '{key}' must be finite, got {value}"
+                )
+            # Normalize ints to floats for uniform handling downstream.
+            self.metrics[key] = float(value)
+
+
+@dataclass
+class Summary:
+    """Descriptive statistics for a single metric across a set of records.
+
+    Attributes:
+        name: Metric name.
+        count: Number of valid observations.
+        mean: Arithmetic mean.
+        median: Median value.
+        stdev: Sample standard deviation (ddof=1); zero when count < 2.
+        minimum: Smallest observed value.
+        maximum: Largest observed value.
+    """
+
+        name: str
+        count: int
+        mean: float
+        median: float
+        stdev: float
+        minimum: float
+        maximum: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "metric": self.name,
+            "count": self.count,
+            "mean": self.mean,
+            "median": self.median,
+            "stdev": self.stdev,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+        }
+
+
+@dataclass
+class ComparisonResult:
+    """Result of comparing two configurations for a single metric.
+
+    Attributes:
+        metric: Metric name.
+        baseline_mean: Mean of the baseline configuration.
+        target_mean: Mean of the target configuration.
+        absolute_delta: target_mean - baseline_mean.
+        relative_delta_pct: Percentage change relative to the baseline.
+        direction: One of 'improved', 'regressed', or 'unchanged'.
+    """
+
+    metric: str
+    baseline_mean: float
+    target_mean: float
+    absolute_delta: float
+    relative_delta_pct: float
+    direction: str
+
+
+@dataclass
+class BenchmarkReport:
+    """Aggregated output for a comparison run.
+
+    Attributes:
+        baseline_config: Name of the baseline configuration.
+        target_config: Name of the target configuration.
+        summaries: Per-metric summaries for both configurations.
+        comparisons: Per-metric comparison results.
+    """
+
+    baseline_config: str
+    target_config: str
+    summaries: Dict[str, Dict[str, Summary]] = field(default_factory=dict)
+    comparisons: List[ComparisonResult] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Core analysis logic
+# ---------------------------------------------------------------------------
+
+def load_records(paths: List[str]) -> List[BenchmarkRecord]:
+    """Load and validate BenchmarkRecord objects from JSON files.
+
+    Each JSON file is expected to contain a list of record dictionaries.  The
+    union of all records across files is returned.  Files are processed in the
+    order given so that later files can conceptually override or extend earlier
+    ones (though duplicates are kept as separate records).
+
+    Args:
+        paths: Filesystem paths to JSON files containing benchmark records.
+
+    Returns:
+        A list of validated BenchmarkRecord objects.
+
+    Raises:
+        FileNotFoundError: If any specified path does not exist.
+        json.JSONDecodeError: If any file contains invalid JSON.
+        ValueError: If a record fails validation (see BenchmarkRecord).
+    """
+    records: List[BenchmarkRecord] = []
+    for path in paths:
+        file_path = Path(path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"Record file not found: {path}")
+        if file_path.suffix not in (".json",):
+            raise ValueError(f"Unsupported file format for {path}; expected .json")
+        with file_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        if not isinstance(data, list):
+            raise ValueError(
+                f"Expected a JSON array of records in {path}, got {type(data).__name__}"
+            )
+        for idx, raw in enumerate(data):
+            if not isinstance(raw, dict):
+                raise ValueError(
+                    f"Record at index {idx} in {path} is not an object"
+                )
+            config = raw.get("config")
+            if not config or not isinstance(config, str):
+                raise ValueError(
+                    f"Record at index {idx} in {path} has an invalid or missing 'config'"
+                )
+            metrics = raw.get("metrics", {})
+            if not isinstance(metrics, dict):
+                raise ValueError(
+                    f"Record at index {idx} in {path} has an invalid 'metrics' object"
+                )
+            metadata = raw.get("metadata", {})
+            if not isinstance(metadata, dict):
+                raise ValueError(
+                    f"Record at index {idx} in {path} has an invalid 'metadata' object"
+                )
+            record = BenchmarkRecord(
+                config=config,
+                metrics=metrics,
+                metadata=metadata,
+            )
+            records.append(record)
+    return records
+
+
+def _compute_summary(name: str, values: List[float]) -> Summary:
+    """Compute descriptive statistics for a single list of numeric values.
+
+    Args:
+        name: The metric name, used for labeling the summary.
+        values: Numeric observations.  Must contain at least one element.
+
+    Returns:
+        A Summary instance describing the distribution of values.
+    """
+    if not values:
+        raise ValueError(f"Cannot compute summary for metric '{name}': no values")
+    count = len(values)
+    mean = statistics.mean(values)
+    median = statistics.median(values)
+    # Use sample standard deviation (ddof=1) when possible; fall back to
+    # population standard deviation (ddof=0) for a single observation so that
+    # the result remains finite and interpretable.
+    stdev = statistics.stdev(values) if count >= 2 else statistics.pstdev(values)
+    minimum = min(values)
+    maximum = max(values)
+    return Summary(
+        name=name,
+        count=count,
+        mean=mean,
+        median=median,
+        stdev=stdev,
+        minimum=minimum,
+        maximum=maximum,
+    )
+
+
+def summarize(
+    records: List[BenchmarkRecord],
+    metrics: Optional[List[str]] = None,
+) -> Dict[str, Dict[str, Summary]]:
+    """Compute per-configuration, per-metric summary statistics.
+
+    Args:
+        records: Validated benchmark records to analyze.
+        metrics: Optional override listing the metrics to include.  If None,
+            the union of all numeric metrics present in the records is used.
+
+    Returns:
+        A nested mapping: config -> metric -> Summary.
+
+    Raises:
+        ValueError: If no records are provided.
